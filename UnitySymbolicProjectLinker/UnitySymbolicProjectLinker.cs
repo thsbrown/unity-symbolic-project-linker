@@ -2,7 +2,7 @@
 using System.IO;
 using static System.Console;
 
-namespace UnitySymbolicLinker
+namespace UnitySymbolicProjectLinker
 {
     internal class UnitySymbolicProjectLinker
     {

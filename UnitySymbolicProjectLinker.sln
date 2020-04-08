@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitySymbolicLinker", "UnitySymbolicLinker\UnitySymbolicLinker.csproj", "{CB026021-D883-4739-8C43-44FD1ECDC54A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitySymbolicProjectLinker", "UnitySymbolicProjectLinker\UnitySymbolicProjectLinker.csproj", "{CB026021-D883-4739-8C43-44FD1ECDC54A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
