@@ -1,11 +1,22 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using static System.Console;
 
 namespace UnitySymbolicProjectLinker
 {
     internal class UnitySymbolicProjectLinker
     {
+        [DllImport("kernel32.dll")]
+        static extern bool CreateSymbolicLink(
+            string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
+
+        enum SymbolicLink
+        {
+            File = 0,
+            Directory = 1
+        }
+
         public static void Main(string[] args)
         {
             //initial prompt
@@ -13,10 +24,10 @@ namespace UnitySymbolicProjectLinker
 @"
 ------- Unity Symbolic Link Project Creator ----------
 
-This batch file will automatically create a Symbolic Link
-of a given Unity project at a specified directory.
+This program will automatically create a symbolically linked
+Unity project from a preexisting Unity project at a specified directory.
 
-In essence the program will create Symbolic links for
+In essence the program will create symbolic links for
 the Assets, ProjectSettings and Packages folders.
 
 -[1]- Always ensure the program is run with ADMINISTRATIVE 
@@ -54,12 +65,12 @@ privileges or IT WONT WORK.
             var linkAssetsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Assets\" \"{originalProjectPath}\\Assets\"";
             var linkProjectSettingsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\ProjectSettings\" \"{originalProjectPath}\\ProjectSettings\"";
             var linkPackagesCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Packages\" \"{originalProjectPath}\\Packages\"";
-            WriteLine("\nExecuting link Assets command: " + linkAssetsCommand);
-            System.Diagnostics.Process.Start("CMD.exe", $"/C {linkAssetsCommand}");
-            WriteLine("Executing link ProjectSettings command: " + linkAssetsCommand);
-            System.Diagnostics.Process.Start("CMD.exe", $"/C {linkProjectSettingsCommand}");
-            WriteLine("Executing link Packages command: " + linkAssetsCommand);
-            System.Diagnostics.Process.Start("CMD.exe", $"/C {linkPackagesCommand}");
+            WriteLine("\nExecuting link Assets command:\n" + linkAssetsCommand);
+            CreateSymbolicLink($"{symbolicLinkProjectPath}\\Assets", $"{originalProjectPath}\\Assets", SymbolicLink.Directory);
+            WriteLine("\nExecuting link ProjectSettings command:\n" + linkProjectSettingsCommand);
+            CreateSymbolicLink($"{symbolicLinkProjectPath}\\ProjectSettings", $"{originalProjectPath}\\ProjectSettings", SymbolicLink.Directory);
+            WriteLine("\nExecuting link Packages command:\n" + linkPackagesCommand);
+            CreateSymbolicLink($"{symbolicLinkProjectPath}\\Packages", $"{originalProjectPath}\\Packages", SymbolicLink.Directory);
         }
 
         /// <summary>
