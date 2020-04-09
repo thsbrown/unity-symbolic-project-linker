@@ -40,6 +40,12 @@ namespace UnitySymbolicProjectLinker
         {
             var initialPrompt = 
                 @"
+  __  __     _ __         ____           __   _      __     _____             __          
+ / / / /__  (_) /___ __  / __/_ ____ _  / /  (_)__  / /__  / ___/______ ___ _/ /____  ____
+/ /_/ / _ \/ / __/ // / _\ \/ // /  ' \/ /__/ / _ \/  '_/ / /__/ __/ -_) _ `/ __/ _ \/ __/
+\____/_//_/_/\__/\_, / /___/\_, /_/_/_/____/_/_//_/_/\_\  \___/_/  \__/\_,_/\__/\___/_/   
+                /___/      /___/                                                          
+
 ------- Unity Symbolic Link Project Creator ----------
 
 This program will automatically create a symbolically linked
