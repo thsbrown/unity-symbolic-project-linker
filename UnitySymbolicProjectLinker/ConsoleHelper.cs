@@ -49,7 +49,8 @@ namespace UnitySymbolicProjectLinker
 ------- Unity Symbolic Link Project Creator ----------
 
 This program will automatically create a symbolically linked
-Unity project from a preexisting Unity project at a specified directory.
+Unity project from a preexisting Unity project at a specified
+ directory.
 
 In essence the program will create symbolic links for
 the Assets, ProjectSettings and Packages folders.
@@ -107,6 +108,17 @@ privileges or IT WONT WORK.
             CreateSymbolicLink($"{symbolicLinkProjectPath}\\ProjectSettings", $"{originalProjectPath}\\ProjectSettings", SymbolicLink.Directory);
             WriteLine("\nExecuting link Packages command:\n" + linkPackagesCommand);
             CreateSymbolicLink($"{symbolicLinkProjectPath}\\Packages", $"{originalProjectPath}\\Packages", SymbolicLink.Directory);
+        }
+
+        /// <summary>
+        /// Adds any additional project specific sym link files and folders 
+        /// </summary>
+        /// TODO this is dirty, should pull this out into forked repo, config file or a prompt
+        public void AddAdditionalSymLinkProjectFoldersAndFiles()
+        {
+            var linkForceSharedSettingsCommand = $"mklink \"{symbolicLinkProjectPath}\\ForceSharedSettings.cpf\" \"{originalProjectPath}\\ForceSharedSettings.cpf\"";
+            WriteLine("\nExecuting link ForceSharedSettings.cpf command:\n" + linkForceSharedSettingsCommand);
+            CreateSymbolicLink($"{symbolicLinkProjectPath}\\ForceSharedSettings.cpf", $"{originalProjectPath}\\ForceSharedSettings.cpf", SymbolicLink.File);
         }
         
         /// <summary>

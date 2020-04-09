@@ -8,6 +8,7 @@
             consoleHelper.DisplayInitialPrompt();
             consoleHelper.GetProjectPathsFromUser();
             consoleHelper.CreateSymbolicallyLinkedProject();
+            consoleHelper.AddAdditionalSymLinkProjectFoldersAndFiles();
         }
     }
 }
