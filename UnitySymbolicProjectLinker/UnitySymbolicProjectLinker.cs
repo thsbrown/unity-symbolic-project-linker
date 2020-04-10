@@ -6,7 +6,15 @@
         {
             var consoleHelper = new ConsoleHelper();
             consoleHelper.DisplayInitialPrompt();
-            consoleHelper.GetProjectPathsFromUser();
+            consoleHelper.SelectSymbolicLinkMode();
+            if (consoleHelper.StartUpMode == 1)
+            {
+                consoleHelper.RunModeOne();
+            }
+            else
+            {
+                consoleHelper.RunModeTwo();
+            }
             consoleHelper.CreateSymbolicallyLinkedProject();
         }
     }

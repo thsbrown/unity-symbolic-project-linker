@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using static System.Console;
 
@@ -23,7 +24,12 @@ namespace UnitySymbolicProjectLinker
         /// The path to created folder for our Symbolically linked Unity project
         /// </summary>
         private string symbolicLinkProjectPath;
-        
+
+        /// <summary>
+        /// The startup mode the user selected.
+        /// </summary>
+        public int StartUpMode { get; private set; }
+
         [DllImport("kernel32.dll")]
         static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
 
@@ -61,10 +67,18 @@ privileges or IT WONT WORK.
             WriteLine(initialPrompt);
         }
 
+        public void SelectSymbolicLinkMode()
+        {
+            WriteLine("Please select the start mode:");    
+            WriteLine("1. Create new Unity symbolic link project.");    
+            WriteLine("2. Fix Unity symbolic links on preexisting project.\n");
+            StartUpMode = int.Parse(WaitForAcceptableInput('1','2').ToString());
+        }
+        
         /// <summary>
         /// Gets Unity project path from user, and sets all other project paths needed for use later
         /// </summary>
-        public void GetProjectPathsFromUser()
+        public void RunModeOne()
         {
             WriteLine(
                 "\nPlease enter the path to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
@@ -75,7 +89,7 @@ privileges or IT WONT WORK.
                 isValidDirectory = Directory.Exists(originalProjectPath);
                 if (!isValidDirectory)
                 {
-                    WriteLine("Invalid Directory...");
+                    WriteLine("Invalid Directory, please try again...");
                 }
             } while (!isValidDirectory);
             originalProjectPathParentFolder = Directory.GetParent(originalProjectPath).ToString();
@@ -86,18 +100,83 @@ privileges or IT WONT WORK.
         }
 
         /// <summary>
+        /// Gets symbolic link and original project path from user
+        /// </summary>
+        public void RunModeTwo()
+        {
+            WriteLine(
+                "\nPlease enter the path to the Unity Symbolic Link project (ex: C:/Users/Name/Games/UnityProject (Symbolic Link)):");
+            bool isValidSymLinkDirectory; 
+            do
+            {
+                symbolicLinkProjectPath = ReadLine();
+                isValidSymLinkDirectory = Directory.Exists(symbolicLinkProjectPath);
+                if (!isValidSymLinkDirectory)
+                {
+                    WriteLine("Invalid Directory, please try again...");
+                }
+            } while (!isValidSymLinkDirectory);
+            WriteLine(
+                "\nPlease enter the path to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
+            bool isValidOgPathDirectory; 
+            do
+            {
+                originalProjectPath = ReadLine();
+                isValidOgPathDirectory = Directory.Exists(originalProjectPath);
+                if (!isValidOgPathDirectory)
+                {
+                    WriteLine("Invalid Directory, please try again...");
+                }
+            } while (!isValidOgPathDirectory);
+            WriteLine("\nThe Symbolic Link Unity project will be reconfigured given the following paths.");
+            WriteLine($"Symbolic Link Project Path: \"{symbolicLinkProjectPath}\"");
+            WriteLine($"Original Project Path: \"{originalProjectPath}\"");
+        }
+
+        /// <summary>
         /// Creates the symbolically linked folder and and symbolically links the Assets, ProjectSettings & Packages folders
         /// </summary>
         public void CreateSymbolicallyLinkedProject()
         {
-            try
+            if (StartUpMode == 1)
             {
-                Directory.CreateDirectory(symbolicLinkProjectPath);
-            }
-            catch (Exception e)
+                try
+                {
+                    Directory.CreateDirectory(symbolicLinkProjectPath);
+                }
+                catch (Exception e)
+                {
+                    WriteLine("The Symbolic Link directory failed to be created...");
+                }
+            }else if (StartUpMode == 2)
             {
-                WriteLine("The Symbolic Link directory failed to be created...");
+                try
+                {
+                    //only delete if Assets folder is Symbolic and exists
+                    var assetsPath = $"{symbolicLinkProjectPath}\\Assets";
+                    if (Directory.Exists(assetsPath) && new FileInfo(assetsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    {
+                        Directory.Delete(assetsPath,true);
+                    }
+                    //only delete if ProjectSettings folder is Symbolic and exists
+                    var projectSettingsPath = $"{symbolicLinkProjectPath}\\ProjectSettings";
+                    if (Directory.Exists(projectSettingsPath) && new FileInfo(projectSettingsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    {
+                        Directory.Delete(projectSettingsPath,true);
+                    }
+                    //only delete if Packages folder is Symbolic and exists
+                    var packagesPath = $"{symbolicLinkProjectPath}\\Packages";
+                    if (Directory.Exists(packagesPath) && new FileInfo(packagesPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    {
+                        Directory.Delete(packagesPath,true);
+                    }
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
             }
+
             var linkAssetsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Assets\" \"{originalProjectPath}\\Assets\"";
             var linkProjectSettingsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\ProjectSettings\" \"{originalProjectPath}\\ProjectSettings\"";
             var linkPackagesCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Packages\" \"{originalProjectPath}\\Packages\"";
@@ -108,25 +187,32 @@ privileges or IT WONT WORK.
             WriteLine("\nExecuting link Packages command:\n" + linkPackagesCommand);
             CreateSymbolicLink($"{symbolicLinkProjectPath}\\Packages", $"{originalProjectPath}\\Packages", SymbolicLink.Directory);
         }
-        
+
         /// <summary>
-        /// Waits for a y or n console input from the user.
+        /// Waits for a character specified by <see cref="acceptableConsoleKeys"/>
         /// </summary>
-        /// <returns>True if y is entered, false if n is entered</returns>
-        private static bool WaitForYesOrNo()
+        /// <returns>The character that was entered</returns>
+        private static char WaitForAcceptableInput(params char[] acceptableConsoleKeys)
         {
             ConsoleKeyInfo enteredKey;
-            bool isValidInput; 
+            char? isValidInput = null; 
             do
             {
                 enteredKey = ReadKey();
-                isValidInput = enteredKey.Key == ConsoleKey.Y || enteredKey.Key == ConsoleKey.N;
-                if (!isValidInput)
+                if (acceptableConsoleKeys.Any(acceptableConsoleKey => enteredKey.KeyChar == acceptableConsoleKey))
                 {
-                    WriteLine("\nInvalid input, enter y or n");
+                    isValidInput = enteredKey.KeyChar;
                 }
-            } while (!isValidInput);
-            return enteredKey.Key == ConsoleKey.Y;
+
+                if (isValidInput != null)
+                {
+                    continue;
+                }
+                Write("\nInvalid input. Valid inputs are ");
+                WriteLine(string.Join(", ", acceptableConsoleKeys.Select(key => key.ToString()).ToArray()));
+            } while (isValidInput == null);
+            
+            return (char)isValidInput;
         }
     }
 }
