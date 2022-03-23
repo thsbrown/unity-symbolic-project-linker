@@ -15,6 +15,7 @@
             {
                 consoleHelper.RunModeTwo();
             }
+            consoleHelper.PromptForSubmoduleSymlinkInclusion();
             consoleHelper.CreateSymbolicallyLinkedProject();
         }
     }
