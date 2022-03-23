@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -24,7 +25,10 @@ namespace UnitySymbolicProjectLinker
         /// The path to created folder for our Symbolically linked Unity project
         /// </summary>
         private string symbolicLinkProjectPath;
-
+        /// <summary>
+        /// The name of the submodule folder (if any) found at the project root that will also be sym linked
+        /// </summary>
+        private string submoduleFolderName;
         /// <summary>
         /// The startup mode the user selected.
         /// </summary>
@@ -67,12 +71,39 @@ privileges or IT WONT WORK.
             WriteLine(initialPrompt);
         }
 
+        /// <summary>
+        /// Displays a prompt asking for the sym link mode and waits for acceptable mode to be specified
+        /// </summary>
         public void SelectSymbolicLinkMode()
         {
             WriteLine("Please select the start mode:");    
             WriteLine("1. Create new Unity symbolic link project.");    
             WriteLine("2. Fix Unity symbolic links on preexisting project.\n");
             StartUpMode = int.Parse(WaitForAcceptableInput('1','2').ToString());
+        }
+
+        /// <summary>
+        /// Captures the git submodule folder to sym link if any from the user
+        /// </summary>
+        public void PromptForSubmoduleSymlinkInclusion()
+        {
+            WriteLine("\nInclude a submodules folder in symbolic linking? y = yes, n = no: ");
+            var includeSubmoduleChar = WaitForAcceptableInput('y', 'n');
+            if (includeSubmoduleChar != 'y')
+            {
+                return;
+            }
+            WriteLine("\nPlease enter the name of the submodules folder (must be in project root):\n");
+            bool isValidDirectory;
+            do
+            {
+                submoduleFolderName = ReadLine();
+                isValidDirectory = Directory.Exists($"{originalProjectPath}\\{submoduleFolderName}");
+                if (!isValidDirectory)
+                {
+                    WriteLine("Invalid Directory, please try again...");
+                }
+            } while (!isValidDirectory);
         }
         
         /// <summary>
@@ -81,7 +112,7 @@ privileges or IT WONT WORK.
         public void RunModeOne()
         {
             WriteLine(
-                "\nPlease enter the path to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
+                "\nPlease enter the path (EXCLUDING QUOTES) to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
             bool isValidDirectory; 
             do
             {
@@ -105,7 +136,7 @@ privileges or IT WONT WORK.
         public void RunModeTwo()
         {
             WriteLine(
-                "\nPlease enter the path to the Unity Symbolic Link project (ex: C:/Users/Name/Games/UnityProject (Symbolic Link)):");
+                "\nPlease enter the path (EXCLUDING QUOTES) to the Unity Symbolic Link project (ex: C:/Users/Name/Games/UnityProject (Symbolic Link)):");
             bool isValidSymLinkDirectory; 
             do
             {
@@ -117,7 +148,7 @@ privileges or IT WONT WORK.
                 }
             } while (!isValidSymLinkDirectory);
             WriteLine(
-                "\nPlease enter the path to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
+                "\nPlease enter the path (EXCLUDING QUOTES) to the Unity project we will be creating the Symbolic Links from (ex: C:/Users/Name/Games/UnityProject):");
             bool isValidOgPathDirectory; 
             do
             {
@@ -138,45 +169,55 @@ privileges or IT WONT WORK.
         /// </summary>
         public void CreateSymbolicallyLinkedProject()
         {
-            if (StartUpMode == 1)
+            switch (StartUpMode)
             {
-                try
-                {
-                    Directory.CreateDirectory(symbolicLinkProjectPath);
-                }
-                catch (Exception e)
-                {
-                    WriteLine("The Symbolic Link directory failed to be created...");
-                }
-            }else if (StartUpMode == 2)
-            {
-                try
-                {
-                    //only delete if Assets folder is Symbolic and exists
-                    var assetsPath = $"{symbolicLinkProjectPath}\\Assets";
-                    if (Directory.Exists(assetsPath) && new FileInfo(assetsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                case 1:
+                    try
                     {
-                        Directory.Delete(assetsPath,true);
+                        Directory.CreateDirectory(symbolicLinkProjectPath);
                     }
-                    //only delete if ProjectSettings folder is Symbolic and exists
-                    var projectSettingsPath = $"{symbolicLinkProjectPath}\\ProjectSettings";
-                    if (Directory.Exists(projectSettingsPath) && new FileInfo(projectSettingsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    catch (Exception e)
                     {
-                        Directory.Delete(projectSettingsPath,true);
+                        WriteLine("The Symbolic Link directory failed to be created...");
                     }
-                    //only delete if Packages folder is Symbolic and exists
-                    var packagesPath = $"{symbolicLinkProjectPath}\\Packages";
-                    if (Directory.Exists(packagesPath) && new FileInfo(packagesPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    break;
+                case 2:
+                    try
                     {
-                        Directory.Delete(packagesPath,true);
+                        //only delete if Assets folder is Symbolic and exists
+                        var assetsPath = $"{symbolicLinkProjectPath}\\Assets";
+                        if (Directory.Exists(assetsPath) && new FileInfo(assetsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            Directory.Delete(assetsPath,true);
+                        }
+                        //only delete if ProjectSettings folder is Symbolic and exists
+                        var projectSettingsPath = $"{symbolicLinkProjectPath}\\ProjectSettings";
+                        if (Directory.Exists(projectSettingsPath) && new FileInfo(projectSettingsPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            Directory.Delete(projectSettingsPath,true);
+                        }
+                        //only delete if Packages folder is Symbolic and exists
+                        var packagesPath = $"{symbolicLinkProjectPath}\\Packages";
+                        if (Directory.Exists(packagesPath) && new FileInfo(packagesPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            Directory.Delete(packagesPath,true);
+                        }
+                        //only delete if Submodule folder is Symbolic and exists
+                        var submodulePath = $"{symbolicLinkProjectPath}\\{submoduleFolderName}";
+                        if (Directory.Exists(submodulePath) && new FileInfo(submodulePath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            Directory.Delete(submodulePath,true);
+                        }
                     }
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
+                    catch (Exception e)
+                    {
+                        // ignored
+                    }
+                    break;
+                default:
+                    WriteLine("Invalid StartUp Mode specified...");
+                    break;
             }
-
             var linkAssetsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Assets\" \"{originalProjectPath}\\Assets\"";
             var linkProjectSettingsCommand = $"mklink /D \"{symbolicLinkProjectPath}\\ProjectSettings\" \"{originalProjectPath}\\ProjectSettings\"";
             var linkPackagesCommand = $"mklink /D \"{symbolicLinkProjectPath}\\Packages\" \"{originalProjectPath}\\Packages\"";
@@ -186,6 +227,13 @@ privileges or IT WONT WORK.
             CreateSymbolicLink($"{symbolicLinkProjectPath}\\ProjectSettings", $"{originalProjectPath}\\ProjectSettings", SymbolicLink.Directory);
             WriteLine("\nExecuting link Packages command:\n" + linkPackagesCommand);
             CreateSymbolicLink($"{symbolicLinkProjectPath}\\Packages", $"{originalProjectPath}\\Packages", SymbolicLink.Directory);
+            if (submoduleFolderName == "")
+            {
+                return;
+            }
+            var linkSubmoduleCommand = $"mklink /D \"{symbolicLinkProjectPath}\\{submoduleFolderName}\" \"{originalProjectPath}\\{submoduleFolderName}\"";
+            WriteLine("\nExecuting link Submodules command:\n" + linkSubmoduleCommand);
+            CreateSymbolicLink($"{symbolicLinkProjectPath}\\{submoduleFolderName}", $"{originalProjectPath}\\{submoduleFolderName}", SymbolicLink.Directory);
         }
 
         /// <summary>
